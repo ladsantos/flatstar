@@ -11,7 +11,7 @@ import limb_darkening
 
 from PIL import Image, ImageDraw
 
-__all__ = ["star"]
+__all__ = ["star", "planet"]
 
 
 IMPLEMENTED_LD_LAW = {"linear": limb_darkening.linear,
@@ -39,9 +39,12 @@ def star(grid_size, limb_darkening_law=None, ld_coefficient=None,
     """
     Make a normalized drawing of a star with a corresponding limb-darkening law
     in a square grid. The normalization is made in such a way that the flattened
-    sum of the values inside the two-dimensional array is equal to 1.0. In
-    practice, higher values of supersampling will yield a more precise
-    normalization, even if the final grid is coarse.
+    sum of the values inside the two-dimensional array is equal to 1.0. The
+    normalization factor is calculated before the resampling, so more complex
+    resampling algorithms may produce more inaccurate normalizations (by a
+    factor of a few to hundreds of ppm) depending on the requested grid size and
+    supersampling factor. If very precise normalized maps are required, then it
+    is better to not use supersampling or use a ``"box"`` resampling algorithm.
 
     Parameters
     ----------
@@ -77,7 +80,11 @@ def star(grid_size, limb_darkening_law=None, ld_coefficient=None,
         to your requested grid size using the algorithm defined in
         ``resample_method``. Default is ``None`` (no supersampling).
 
-    resample_method
+    resample_method (``str`` or ``None``, optional):
+        Resampling algorithm. The options currently available are:
+        ``"nearest"``, ``"box"``, ``"bilinear"``, ``"hamming"``, ``"bicubic"``,
+        and ``"lanczos"``. If ``None``, then fallback to ``"box"``. Default
+        is ``None``.
 
     Returns
     -------
@@ -125,6 +132,9 @@ def star(grid_size, limb_darkening_law=None, ld_coefficient=None,
             raise NotImplementedError("This limb-darkening law is not "
                                       "implemented.")
 
+    # Calculate the normalization factor
+    norm = np.sum(star_array)  # Normalization factor is the total intensity
+
     # Downsample the supersampled array to the desired grid size
     if supersampling is not None:
         # We use PIL.Image to perform the downsampling
@@ -142,23 +152,56 @@ def star(grid_size, limb_darkening_law=None, ld_coefficient=None,
         # If the resample_method is not defined, then simply use a nearest
         # interpolation
         else:
-            final_star_array = im.resize(final_shape, resample=Image.NEAREST)
+            final_star_array = im.resize(final_shape, resample=Image.BOX)
         # Finally make `star_array` as a copy of the downsampled array
         star_array = np.copy(final_star_array)
     # If no supersampling was used
     else:
         pass
 
-    # Calculate the normalization factor
-    norm = np.sum(star_array)  # Normalization factor is the total intensity
     # Adding the star to the grid
-    grid = star_array / norm
+    if supersampling is not None:
+        grid = star_array / (norm / supersampling ** 2)
+    else:
+        grid = star_array / norm
 
     return grid
 
 
+# Why not draw a planet?
+def planet():
+    raise NotImplementedError("Drawing a planet is not implemented yet.")
+
+
+# Combine the star drawing with other drawings
+def combine():
+    raise NotImplementedError("This feature is not implemented yet.")
+
+
 # General function to draw a disk
 def _disk(center, radius, shape, value=1.0):
+    """
+    Hidden function used to draw disks with PIL.
+
+    Parameters
+    ----------
+    center (``int``):
+        Center of the disk in pixel space.
+
+    radius (``int``):
+        Radius of the disk in number of pixels.
+
+    shape (``array-like``):
+        Shape of the grid in number of pixels.
+
+    value (``float``, optional):
+        Value with which to fill the disk. Default is 1.0.
+
+    Returns
+    -------
+    disk (``numpy.ndarray``):
+        Grid containing a drawing of the disk.
+    """
     top_left = (center[0] - radius, center[1] - radius)
     bottom_right = (center[0] + radius, center[1] + radius)
     image = Image.new('1', shape)
