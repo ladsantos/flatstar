@@ -7,7 +7,7 @@ limb darkening.
 
 import numpy as np
 import warnings
-import limb_darkening
+from flatstar import limb_darkening
 
 from PIL import Image, ImageDraw
 
