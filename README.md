@@ -2,6 +2,8 @@
 
 `flatstar` is a pure-Python tool for drawing stellar disks with scientifically-accurate limb darkening. Each pixel has an accurate fractional intensity in relation to the total stellar intensity of `1.0`. It is ideal for ray-tracing simulations of stars and planetary transits.
 
+[![Build Status](https://travis-ci.com/ladsantos/flatstar.svg?branch=main)](https://travis-ci.com/ladsantos/flatstar) [![Coverage Status](https://coveralls.io/repos/github/ladsantos/flatstar/badge.svg?branch=main)](https://coveralls.io/github/ladsantos/flatstar?branch=main)
+
 ![flatstar](assets/flatstar.png)
 
 ## Features
