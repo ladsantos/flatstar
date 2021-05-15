@@ -86,10 +86,8 @@ def star(grid_size, limb_darkening_law=None, ld_coefficient=None,
         For fast output of high-resolution grids, you may want to upscale
         them from a low-resolution setup to save about one order of magnitude
         in computation time. This parameter is the factor by which to upscale
-        the grids. Notice that the output grid size is going to be multiplied by
-        the upscaling factor. The map is upscaled to your requested grid
-        size using the algorithm  defined in ``resample_method``. Default is
-        ``None`` (no upscaling).
+        the grids to match the requested grid size. The resizing algorithm is
+        defined in ``resample_method``. Default is ``None`` (no upscaling).
 
     resample_method (``str`` or ``None``, optional):
         Resampling algorithm. The options currently available are:
