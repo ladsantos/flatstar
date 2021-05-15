@@ -35,7 +35,8 @@ RESAMPLING_ALIAS = {"nearest": Image.NEAREST, "box": Image.BOX,
 
 # Draw a star
 def star(grid_size, limb_darkening_law=None, ld_coefficient=None,
-         custom_limb_darkening=None, supersampling=None, resample_method=None):
+         custom_limb_darkening=None, supersampling=None, upscaling=None,
+         resample_method=None):
     """
     Make a normalized drawing of a star with a corresponding limb-darkening law
     in a square grid. The normalization is made in such a way that the flattened
@@ -75,10 +76,20 @@ def star(grid_size, limb_darkening_law=None, ld_coefficient=None,
         array-like object). Default is ``None``.
 
     supersampling (``int``, ``float``, or ``None``, optional):
-        In order to avoid "pixelized" maps, you can supersample the array by a
-        certain factor defined by this parameter, and then the map is resampled
-        to your requested grid size using the algorithm defined in
-        ``resample_method``. Default is ``None`` (no supersampling).
+        For low-resolution grid sizes, in order to avoid intensity maps with
+        hard edges, you can supersample  the array by a certain factor defined
+        by this parameter, and then the map is downscaled to your requested grid
+        size using the algorithm  defined in ``resample_method``. Default is
+        ``None`` (no supersampling).
+
+    upscaling (``int``, ``float``, or ``None``, optional):
+        For fast output of high-resolution grids, you may want to upscale
+        them from a low-resolution setup to save about one order of magnitude
+        in computation time. This parameter is the factor by which to upscale
+        the grids. Notice that the output grid size is going to be multiplied by
+        the upscaling factor. The map is upscaled to your requested grid
+        size using the algorithm  defined in ``resample_method``. Default is
+        ``None`` (no upscaling).
 
     resample_method (``str`` or ``None``, optional):
         Resampling algorithm. The options currently available are:
@@ -88,13 +99,16 @@ def star(grid_size, limb_darkening_law=None, ld_coefficient=None,
 
     Returns
     -------
-
+    grid (``numpy.ndarray``):
+        Intensity map of the star.
     """
     # Define the effective grid size on which to start
-    if supersampling is None:
-        effective_grid_size = grid_size
-    else:
+    if supersampling is not None:
         effective_grid_size = int(round(supersampling * grid_size))
+    elif upscaling is not None:
+        effective_grid_size = int(grid_size // upscaling)
+    else:
+        effective_grid_size = grid_size
     shape = (effective_grid_size, effective_grid_size)
 
     # Draw the host star
@@ -135,47 +149,43 @@ def star(grid_size, limb_darkening_law=None, ld_coefficient=None,
     # Calculate the normalization factor
     norm = np.sum(star_array)  # Normalization factor is the total intensity
 
-    # Downsample the supersampled array to the desired grid size
+    # We use PIL.Image to perform the resizing
+    im = Image.fromarray(star_array)
+    final_shape = (grid_size, grid_size)
+
+    # Downsample the supersampled array to the desired grid size if necessary
     if supersampling is not None:
-        # We use PIL.Image to perform the downsampling
-        im = Image.fromarray(star_array)
-        final_shape = (grid_size, grid_size)
-        # If the resample_method is defined by the user with one of the
-        # available options, then use it
-        if resample_method is not None:
-            try:
-                final_star_array = im.resize(
-                    final_shape, resample=RESAMPLING_ALIAS[resample_method])
-            except KeyError:
-                raise NotImplementedError("This resampling method is not "
-                                          "implemented.")
-        # If the resample_method is not defined, then simply use a nearest
-        # interpolation
-        else:
-            final_star_array = im.resize(final_shape, resample=Image.BOX)
-        # Finally make `star_array` as a copy of the downsampled array
-        star_array = np.copy(final_star_array)
-    # If no supersampling was used
+        rescaled_norm = norm / supersampling ** 2
+    # Or upscale the array
+    elif upscaling is not None:
+        rescaled_norm = norm * upscaling ** 2
+    else:  # No resizing needed
+        grid = star_array / norm  # Add star to the grid
+        return grid
+
+    # If the resample_method is defined by the user with one of the
+    # available options, then use it
+    if resample_method is not None:
+        try:
+            final_star_array = im.resize(
+                final_shape, resample=RESAMPLING_ALIAS[resample_method])
+        except KeyError:
+            raise NotImplementedError("This resampling method is not "
+                                      "implemented.")
+    # If the resample_method is not defined, then simply use a box interpolation
     else:
-        pass
+        final_star_array = im.resize(final_shape, resample=Image.BOX)
+    # Finally make `star_array` as a copy of the downsampled array
+    star_array = np.copy(final_star_array)
 
     # Adding the star to the grid
-    if supersampling is not None:
-        grid = star_array / (norm / supersampling ** 2)
-    else:
-        grid = star_array / norm
-
+    grid = star_array / rescaled_norm
     return grid
 
 
 # Why not draw a planet?
 def planet():
     raise NotImplementedError("Drawing a planet is not implemented yet.")
-
-
-# Combine the star drawing with other drawings
-def combine():
-    raise NotImplementedError("This feature is not implemented yet.")
 
 
 # General function to draw a disk

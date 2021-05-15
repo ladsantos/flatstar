@@ -55,3 +55,22 @@ def test_supersampling(grid_size=100, factor=np.random.random() * 10, use_ld=6):
             exception_in.append(IMPLEMENTED_SAMPLERS[i])
 
     assert(did_it_work == 1)
+
+
+# Test the upscaling
+def test_upscaling(grid_size=500, factor=np.random.random() * 10, use_ld=6):
+    did_it_work = 1
+    exception_in = []
+    for i in range(N_SAMPLERS):
+        try:
+            star = draw.star(grid_size,
+                             limb_darkening_law=IMPLEMENTED_LD_LAWS[use_ld],
+                             ld_coefficient=TEST_COEFFICIENTS[use_ld],
+                             upscaling=factor,
+                             resample_method=IMPLEMENTED_SAMPLERS[i])
+            did_it_work *= 1
+        except:
+            did_it_work *= 0
+            exception_in.append(IMPLEMENTED_SAMPLERS[i])
+
+    assert(did_it_work == 1)
