@@ -10,6 +10,9 @@ flatstar: Documentation
 .. image:: https://coveralls.io/repos/github/ladsantos/flatstar/badge.svg?branch=main
     :target: https://coveralls.io/github/ladsantos/flatstar?branch=main
     :alt: Coverage
+.. image:: https://readthedocs.org/projects/flatstar/badge/?version=latest
+    :target: https://flatstar.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
 ``flatstar`` is an open-source Python tool for drawing stellar disks as
 ``numpy.ndarray`` objects with scientifically-rigorous limb darkening. Each
