@@ -131,3 +131,6 @@ dmypy.json
 # PyCharm stuff
 *.DS_Store
 .idea/
+
+# Other stuff
+experiments/

@@ -47,23 +47,42 @@ class StarGrid(object):
         self.upscaling_factor = upscaling
         self.resample_method = resample_method
 
+        # Parameters for a transit
+        self.planet_px_coordinates = None  # Coords. of planet in pixel space
+        self.planet_to_star_ratio = None  # Planet radius in pixel space
+        self.planet_impact_parameter = None
+        self.planet_phase = None
 
-# The following function is used to calculate distances from the center of
-# the grid in unit of pixels (cylindrical radius)
-def cylindrical_r(grid):
+
+# The following function is used to calculate distances from a reference point
+# in the grid in unit of pixels (cylindrical radius)
+def cylindrical_r(grid, reference=(0, 0)):
     """
-    Calculate distances from the center of the grid in unit of pixels
-    (cylindrical radius).
+    Calculate distances from a reference point of the grid in unit of pixels
+    (cylindrical radius). The reference (0, 0) is the center of the grid.
+
+    Parameters
+    ----------
+    grid (``numpy.ndarray``):
+        Grid. It does not necessarily need to be square.
+
+    reference (``array-like``, optional):
+        Reference point. The coordinates of the center of the grid are (0, 0) in
+        pixel space. The reference from which to calculate the distance must
+        be in relation to the center. Default is (0, 0).
 
     Returns
     -------
     r_matrix (``numpy.ndarray``):
-        Array containing the values of distances from the center of the grid
-        in units of pixels.
+        Array containing the values of distances from the reference point in
+        units of pixels.
     """
-    grid_size = np.shape(grid)[0]
-    center = grid_size // 2
-    coords = np.linspace(-center, center, grid_size)
-    coords_x, coords_y = np.meshgrid(coords, coords)
-    r_matrix = (coords_x ** 2 + coords_y ** 2) ** 0.5
+    ref_x, ref_y = reference
+    grid_size_x, grid_size_y = np.shape(grid)
+    grid_center_x, grid_center_y = np.array([grid_size_x // 2,
+                                             grid_size_y // 2])
+    coords_x = np.linspace(-grid_center_x, grid_center_x, grid_size_x)
+    coords_y = np.linspace(-grid_center_y, grid_center_y, grid_size_y)
+    map_x, map_y = np.meshgrid(coords_x - ref_x, coords_y - ref_y)
+    r_matrix = (map_x ** 2 + map_y ** 2) ** 0.5
     return r_matrix

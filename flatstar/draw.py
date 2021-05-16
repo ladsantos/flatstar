@@ -100,7 +100,7 @@ def star(grid_size, radius=0.5, limb_darkening_law=None, ld_coefficient=None,
 
     Returns
     -------
-    grid (``numpy.ndarray``):
+    grid (``flatstar.utils.StarGrid`` object):
         Intensity map of the star.
     """
     # Emit a warning if the radius is larger than 0.5
@@ -161,7 +161,10 @@ def star(grid_size, radius=0.5, limb_darkening_law=None, ld_coefficient=None,
         pass
     else:  # No resizing needed
         norm = np.sum(star_array)
-        grid = star_array / norm  # Add star to the grid
+        intensity_array = star_array / norm
+        grid = utils.StarGrid(intensity_array, radius, limb_darkening_law,
+                              ld_coefficient, supersampling, upscaling,
+                              resample_method)
         return grid
 
     # If the resample_method is defined by the user with one of the
@@ -182,19 +185,76 @@ def star(grid_size, radius=0.5, limb_darkening_law=None, ld_coefficient=None,
 
     # Adding the star to the grid
     norm = np.sum(star_array)
-    grid = star_array / norm
+    intensity_array = star_array / norm
 
-    # grid = objects.StarGrid(intensity_array, radius, limb_darkening_law,
-    #                         ld_coefficient, supersampling, upscaling,
-    #                         resample_method)
-
+    grid = utils.StarGrid(intensity_array, radius, limb_darkening_law,
+                          ld_coefficient, supersampling, upscaling,
+                          resample_method)
     return grid
 
 
 # Draw a transit on a star
 def planet_transit(star_grid, planet_to_star_ratio, impact_parameter=0.0,
                    phase=0.0):
-    raise NotImplementedError("Drawing a planet is not implemented yet.")
+    """
+    Draw a transit in the ``StarGrid`` object.
+
+    Parameters
+    ----------
+    star_grid (``flatstar.utils.StarGrid`` object):
+
+    planet_to_star_ratio (``float``):
+        Ratio between the radii of the planet and the star.
+
+    impact_parameter (``float``, optional):
+        Impact parameter of the transit in units of stellar radii. Default is 0.
+
+    phase (``float``, optional):
+        Phase of the transit. -0.5, 0.0, and +0.5 correspond respectively to the
+        time of first contact, transit mid-center, and time of fourth contact.
+        Default is 0.
+
+    Returns
+    -------
+    star_grid (``flatstar.utils.StarGrid`` object):
+        Updated ``StarGrid`` object containing the transit.
+    """
+    b = impact_parameter
+    rp_rs = planet_to_star_ratio
+
+    # Radii of the star and the planet in units of grid size
+    grid_length_x, grid_length_y = np.shape(star_grid.intensity)
+    star_radius = star_grid.radius * grid_length_x
+    planet_radius = star_radius * rp_rs
+
+    # Before drawing the planet, we need to figure out the exact coordinate
+    # of the center of the planet
+    y_p = (impact_parameter * star_radius) + grid_length_y // 2
+
+    # The x coordinate of the planet is a bit trickier to figure out. Since we
+    # want the -0.5 and 0.5 phases to always match the times of first and fourth
+    # contact, respectively, x_p will depend on the impact parameter in a very
+    # non-trivial manner. Sorry for the ugliness, but it is the price of
+    # convenience!
+    beta = (1 - (b * star_radius / (planet_radius + star_radius)) ** 2) ** 0.5
+    alpha = grid_length_x // 2 - (planet_radius + star_radius) * beta
+    x_p = alpha + (phase + 0.5) * 2 * (planet_radius + star_radius) * beta
+
+    # And now we draw it
+    planet = _disk(center=(x_p, y_p), radius=planet_radius,
+                   shape=np.shape(star_grid.intensity),
+                   value=1.0)
+    updated_intensity = star_grid.intensity - planet
+    # Remove infinities in the planet disk and set the intensity to zero
+    updated_intensity[updated_intensity < 0] = 0.0
+
+    # Update the ``StarGrid`` object
+    star_grid.intensity = updated_intensity
+    star_grid.planet_px_coordinates = (x_p, y_p)
+    star_grid.planet_to_star_ratio = planet_to_star_ratio
+    star_grid.planet_impact_parameter = b
+    star_grid.phase = phase
+    return star_grid
 
 
 # General function to draw a disk
