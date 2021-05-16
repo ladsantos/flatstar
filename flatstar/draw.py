@@ -229,7 +229,7 @@ def planet_transit(star_grid, planet_to_star_ratio, impact_parameter=0.0,
 
     # Before drawing the planet, we need to figure out the exact coordinate
     # of the center of the planet
-    y_p = (impact_parameter * star_radius) + grid_length_y // 2
+    y_p = (impact_parameter * star_radius) + grid_length_y / 2
 
     # The x coordinate of the planet is a bit trickier to figure out. Since we
     # want the -0.5 and 0.5 phases to always match the times of first and fourth
@@ -237,7 +237,7 @@ def planet_transit(star_grid, planet_to_star_ratio, impact_parameter=0.0,
     # non-trivial manner. Sorry for the ugliness, but it is the price of
     # convenience!
     beta = (1 - (b * star_radius / (planet_radius + star_radius)) ** 2) ** 0.5
-    alpha = grid_length_x // 2 - (planet_radius + star_radius) * beta
+    alpha = grid_length_x / 2 - (planet_radius + star_radius) * beta
     x_p = alpha + (phase + 0.5) * 2 * (planet_radius + star_radius) * beta
 
     # And now we draw it
@@ -250,7 +250,8 @@ def planet_transit(star_grid, planet_to_star_ratio, impact_parameter=0.0,
 
     # Update the ``StarGrid`` object
     star_grid.intensity = updated_intensity
-    star_grid.planet_px_coordinates = (x_p, y_p)
+    star_grid.planet_px_coordinates = (x_p - grid_length_x / 2,
+                                       y_p - grid_length_y / 2)
     star_grid.planet_to_star_ratio = planet_to_star_ratio
     star_grid.planet_impact_parameter = b
     star_grid.phase = phase
