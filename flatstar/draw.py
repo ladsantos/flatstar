@@ -7,11 +7,11 @@ limb darkening.
 
 import numpy as np
 import warnings
-from flatstar import limb_darkening
+from flatstar import limb_darkening, utils
 
 from PIL import Image, ImageDraw
 
-__all__ = ["star", "planet"]
+__all__ = ["star", "planet_transit"]
 
 
 IMPLEMENTED_LD_LAW = {"linear": limb_darkening.linear,
@@ -124,10 +124,9 @@ def star(grid_size, radius=0.5, limb_darkening_law=None, ld_coefficient=None,
                        shape=shape)
 
     # We need to know what is the distance of each pixel from the stellar center
-    # There is a little bit of hack in here to avoid using for-loops
-    coords = np.linspace(-center, center, effective_grid_size)
-    coords_x, coords_y = np.meshgrid(coords, coords)
-    r_array = (coords_x ** 2 + coords_y ** 2) ** 0.5
+    # There is a useful function in ``utils`` for that, and it does not use
+    # for-loops
+    r_array = utils.cylindrical_r(star_array)
 
     # Now we calculate the mu for the limb-darkening law
     # We ignore a RuntimeWarning here because any NaN will be multiplied by zero
@@ -153,20 +152,13 @@ def star(grid_size, radius=0.5, limb_darkening_law=None, ld_coefficient=None,
             raise NotImplementedError("This limb-darkening law is not "
                                       "implemented.")
 
-    # Calculate the normalization factor
-    # norm = np.sum(star_array)  # Normalization factor is the total intensity
-
     # We use PIL.Image to perform the resizing
     im = Image.fromarray(star_array)
     final_shape = (grid_size, grid_size)
 
-    # Downsample the supersampled array to the desired grid size if necessary
+    # Resize the array to the desired grid size if necessary
     if supersampling is not None or upscaling is not None:
         pass
-    #     rescaled_norm = norm / supersampling ** 2
-    # # Or upscale the array
-    # elif upscaling is not None:
-    #     rescaled_norm = norm * upscaling ** 2
     else:  # No resizing needed
         norm = np.sum(star_array)
         grid = star_array / norm  # Add star to the grid
@@ -183,6 +175,7 @@ def star(grid_size, radius=0.5, limb_darkening_law=None, ld_coefficient=None,
                                       "implemented.")
     # If the resample_method is not defined, then simply use a box interpolation
     else:
+        resample_method = 'box'
         final_star_array = im.resize(final_shape, resample=Image.BOX)
     # Finally make `star_array` as a copy of the downsampled array
     star_array = np.copy(final_star_array)
@@ -190,11 +183,17 @@ def star(grid_size, radius=0.5, limb_darkening_law=None, ld_coefficient=None,
     # Adding the star to the grid
     norm = np.sum(star_array)
     grid = star_array / norm
+
+    # grid = objects.StarGrid(intensity_array, radius, limb_darkening_law,
+    #                         ld_coefficient, supersampling, upscaling,
+    #                         resample_method)
+
     return grid
 
 
-# Why not draw a planet?
-def planet():
+# Draw a transit on a star
+def planet_transit(star_grid, planet_to_star_ratio, impact_parameter=0.0,
+                   phase=0.0):
     raise NotImplementedError("Drawing a planet is not implemented yet.")
 
 

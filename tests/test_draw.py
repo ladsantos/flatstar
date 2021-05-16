@@ -28,16 +28,12 @@ def test_ld_laws(grid_size=101):
     did_it_work = 1
     exception_in = []
     for i in range(N_LAWS):
-        try:
-            star = draw.star(grid_size,
-                             limb_darkening_law=IMPLEMENTED_LD_LAWS[i],
-                             ld_coefficient=TEST_COEFFICIENTS[i])
-            did_it_work *= 1
-        except:
-            did_it_work *= 0
-            exception_in.append(IMPLEMENTED_LD_LAWS[i])
-
-    assert(did_it_work == 1)
+        star = draw.star(grid_size,
+                         limb_darkening_law=IMPLEMENTED_LD_LAWS[i],
+                         ld_coefficient=TEST_COEFFICIENTS[i])
+        total_intensity = np.sum(star)
+        obtained_precision = abs(1.0 - total_intensity)
+        assert (obtained_precision < REQUIRED_INTENSITY_PRECISION)
 
 
 # Test a custom limb-darkening law
@@ -72,18 +68,14 @@ def test_supersampling(grid_size=100, factor=np.random.randint(2, 10), use_ld=6)
     did_it_work = 1
     exception_in = []
     for i in range(N_SAMPLERS):
-        try:
-            star = draw.star(grid_size,
-                             limb_darkening_law=IMPLEMENTED_LD_LAWS[use_ld],
-                             ld_coefficient=TEST_COEFFICIENTS[use_ld],
-                             supersampling=factor,
-                             resample_method=IMPLEMENTED_SAMPLERS[i])
-            did_it_work *= 1
-        except:
-            did_it_work *= 0
-            exception_in.append(IMPLEMENTED_SAMPLERS[i])
-
-    assert(did_it_work == 1)
+        star = draw.star(grid_size,
+                         limb_darkening_law=IMPLEMENTED_LD_LAWS[use_ld],
+                         ld_coefficient=TEST_COEFFICIENTS[use_ld],
+                         supersampling=factor,
+                         resample_method=IMPLEMENTED_SAMPLERS[i])
+        total_intensity = np.sum(star)
+        obtained_precision = abs(1.0 - total_intensity)
+        assert (obtained_precision < REQUIRED_INTENSITY_PRECISION)
 
 
 # Test the upscaling
@@ -91,15 +83,11 @@ def test_upscaling(grid_size=500, factor=np.random.random() * 10, use_ld=6):
     did_it_work = 1
     exception_in = []
     for i in range(N_SAMPLERS):
-        try:
-            star = draw.star(grid_size,
-                             limb_darkening_law=IMPLEMENTED_LD_LAWS[use_ld],
-                             ld_coefficient=TEST_COEFFICIENTS[use_ld],
-                             upscaling=factor,
-                             resample_method=IMPLEMENTED_SAMPLERS[i])
-            did_it_work *= 1
-        except:
-            did_it_work *= 0
-            exception_in.append(IMPLEMENTED_SAMPLERS[i])
-
-    assert(did_it_work == 1)
+        star = draw.star(grid_size,
+                         limb_darkening_law=IMPLEMENTED_LD_LAWS[use_ld],
+                         ld_coefficient=TEST_COEFFICIENTS[use_ld],
+                         upscaling=factor,
+                         resample_method=IMPLEMENTED_SAMPLERS[i])
+        total_intensity = np.sum(star)
+        obtained_precision = abs(1.0 - total_intensity)
+        assert (obtained_precision < REQUIRED_INTENSITY_PRECISION)

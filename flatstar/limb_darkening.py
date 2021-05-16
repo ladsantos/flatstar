@@ -127,6 +127,8 @@ def logarithmic(mu, c, i0=1.0):
     """
     c1, c2 = c
     attenuation = 1 - c1 * (1 - mu) - c2 * mu * np.log(mu) ** 2
+    # Remove the NaNs
+    attenuation[np.isnan(attenuation)] = 0.0
     i_mu = i0 * attenuation
     return i_mu
 
@@ -156,7 +158,12 @@ def exponential(mu, c, i0=1.0):
         ``mu``.
     """
     c1, c2 = c
-    attenuation = 1 - c1 * (1 - mu) - c2 / (1 - np.exp(mu))
+    # This particular limb-darkening law requires some sleight of hand to avoid
+    # numerical exceptions and warnings
+    term1 = np.copy(c1 * (1 - mu))
+    mu[mu <1E-16] = -np.inf
+    term2 = c2 / (1 - np.exp(mu))
+    attenuation = 1 - term1 - term2
     i_mu = i0 * attenuation
     return i_mu
 
