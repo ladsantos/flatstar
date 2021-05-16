@@ -34,7 +34,7 @@ RESAMPLING_ALIAS = {"nearest": Image.NEAREST, "box": Image.BOX,
 
 
 # Draw a star
-def star(grid_size, limb_darkening_law=None, ld_coefficient=None,
+def star(grid_size, radius=0.5, limb_darkening_law=None, ld_coefficient=None,
          custom_limb_darkening=None, supersampling=None, upscaling=None,
          resample_method=None):
     """
@@ -51,6 +51,9 @@ def star(grid_size, limb_darkening_law=None, ld_coefficient=None,
     ----------
     grid_size (``int``):
         Size of the square grid in number pixels.
+
+    radius (``int`` or ``float``, optional):
+        Stellar radius in units of ``grid_size``. Default is 0.5.
 
     limb_darkening_law (``None`` or ``str``, optional):
         String with the name of the limb-darkening law. The options currently
@@ -100,6 +103,11 @@ def star(grid_size, limb_darkening_law=None, ld_coefficient=None,
     grid (``numpy.ndarray``):
         Intensity map of the star.
     """
+    # Emit a warning if the radius is larger than 0.5
+    if radius > 0.5:
+        warnings.warn('Using a radius larger than 0.5 will yield inaccurate '
+                      'intensities.', RuntimeWarning)
+
     # Define the effective grid size on which to start
     if supersampling is not None:
         effective_grid_size = int(round(supersampling * grid_size))
@@ -110,13 +118,14 @@ def star(grid_size, limb_darkening_law=None, ld_coefficient=None,
     shape = (effective_grid_size, effective_grid_size)
 
     # Draw the host star
-    star_radius = effective_grid_size // 2
-    star_array = _disk(center=(star_radius, star_radius), radius=star_radius,
+    star_radius = radius * effective_grid_size
+    center = effective_grid_size // 2
+    star_array = _disk(center=(center, center), radius=star_radius,
                        shape=shape)
 
     # We need to know what is the distance of each pixel from the stellar center
     # There is a little bit of hack in here to avoid using for-loops
-    coords = np.linspace(-star_radius, star_radius, effective_grid_size)
+    coords = np.linspace(-center, center, effective_grid_size)
     coords_x, coords_y = np.meshgrid(coords, coords)
     r_array = (coords_x ** 2 + coords_y ** 2) ** 0.5
 
@@ -145,19 +154,21 @@ def star(grid_size, limb_darkening_law=None, ld_coefficient=None,
                                       "implemented.")
 
     # Calculate the normalization factor
-    norm = np.sum(star_array)  # Normalization factor is the total intensity
+    # norm = np.sum(star_array)  # Normalization factor is the total intensity
 
     # We use PIL.Image to perform the resizing
     im = Image.fromarray(star_array)
     final_shape = (grid_size, grid_size)
 
     # Downsample the supersampled array to the desired grid size if necessary
-    if supersampling is not None:
-        rescaled_norm = norm / supersampling ** 2
-    # Or upscale the array
-    elif upscaling is not None:
-        rescaled_norm = norm * upscaling ** 2
+    if supersampling is not None or upscaling is not None:
+        pass
+    #     rescaled_norm = norm / supersampling ** 2
+    # # Or upscale the array
+    # elif upscaling is not None:
+    #     rescaled_norm = norm * upscaling ** 2
     else:  # No resizing needed
+        norm = np.sum(star_array)
         grid = star_array / norm  # Add star to the grid
         return grid
 
@@ -177,7 +188,8 @@ def star(grid_size, limb_darkening_law=None, ld_coefficient=None,
     star_array = np.copy(final_star_array)
 
     # Adding the star to the grid
-    grid = star_array / rescaled_norm
+    norm = np.sum(star_array)
+    grid = star_array / norm
     return grid
 
 
