@@ -1,5 +1,5 @@
 flatstar: Documentation
-=======================
+===========================
 
 .. image:: https://img.shields.io/badge/GitHub-ladsantos%2Fflatstar-blue.svg?style=flat
     :target: https://github.com/ladsantos/flatstar

@@ -19,8 +19,8 @@ class StarGrid(object):
     intensity_array (``numpy.ndarray``):
         Array of normalized intensities.
 
-    radius (``int`` or ``float``, optional):
-        Stellar radius in units of the grid size. Default is 0.5.
+    radius_px (``int`` or ``float``, optional):
+        Stellar radius in units of pixels.
 
     limb_darkening_law (``None`` or ``str``, optional):
         String with the name of the limb-darkening law.
@@ -37,10 +37,10 @@ class StarGrid(object):
     resample_method (``str`` or ``None``, optional):
         Algorithm used to resize the grid.
     """
-    def __init__(self, intensity_array, radius, limb_darkening_law,
+    def __init__(self, intensity_array, radius_px, limb_darkening_law,
                  ld_coefficients, supersampling, upscaling, resample_method):
         self.intensity = intensity_array
-        self.radius = radius
+        self.radius_px = radius_px
         self.limb_darkening_law = limb_darkening_law
         self.ld_coefficients = ld_coefficients
         self.supersampling_factor = supersampling
@@ -49,7 +49,7 @@ class StarGrid(object):
 
         # Parameters for a transit
         self.planet_px_coordinates = None  # Coords. of planet in pixel space
-        self.planet_to_star_ratio = None  # Planet radius in pixel space
+        self.planet_radius_px = None  # Planet radius in pixel space
         self.planet_impact_parameter = None
         self.planet_phase = None
 

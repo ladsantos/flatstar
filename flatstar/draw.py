@@ -162,7 +162,7 @@ def star(grid_size, radius=0.5, limb_darkening_law=None, ld_coefficient=None,
     else:  # No resizing needed
         norm = np.sum(star_array)
         intensity_array = star_array / norm
-        grid = utils.StarGrid(intensity_array, radius, limb_darkening_law,
+        grid = utils.StarGrid(intensity_array, star_radius, limb_darkening_law,
                               ld_coefficient, supersampling, upscaling,
                               resample_method)
         return grid
@@ -187,7 +187,7 @@ def star(grid_size, radius=0.5, limb_darkening_law=None, ld_coefficient=None,
     norm = np.sum(star_array)
     intensity_array = star_array / norm
 
-    grid = utils.StarGrid(intensity_array, radius, limb_darkening_law,
+    grid = utils.StarGrid(intensity_array, star_radius, limb_darkening_law,
                           ld_coefficient, supersampling, upscaling,
                           resample_method)
     return grid
@@ -224,7 +224,7 @@ def planet_transit(star_grid, planet_to_star_ratio, impact_parameter=0.0,
 
     # Radii of the star and the planet in units of grid size
     grid_length_x, grid_length_y = np.shape(star_grid.intensity)
-    star_radius = star_grid.radius * grid_length_x
+    star_radius = star_grid.radius_px
     planet_radius = star_radius * rp_rs
 
     # Before drawing the planet, we need to figure out the exact coordinate
@@ -252,7 +252,7 @@ def planet_transit(star_grid, planet_to_star_ratio, impact_parameter=0.0,
     star_grid.intensity = updated_intensity
     star_grid.planet_px_coordinates = (x_p - grid_length_x / 2,
                                        y_p - grid_length_y / 2)
-    star_grid.planet_to_star_ratio = planet_to_star_ratio
+    star_grid.planet_radius_px = planet_radius
     star_grid.planet_impact_parameter = b
     star_grid.phase = phase
     return star_grid
