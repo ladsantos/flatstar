@@ -20,7 +20,15 @@
 
 ## Installation
 
-For now there is only one way to install `flatstar`: compiling from source.
+You can install `flatstar` either with `pip` or by compiling from source. Coming soon: you will also be able to install it using `conda-forge`. Any of these methods will also install the dependencies `numpy` and `pillow` if they are not yet installed.
+
+### Using `pip` (more stable version)
+
+Simply run the following line in your terminal and you are good to go:
+
+```angular2html
+pip install flatstar
+```
 
 ### Compile from source (development version)
 
