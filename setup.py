@@ -15,7 +15,7 @@ if sys.argv[-1] == "publish":
 
 setup(
     name="flatstar",
-    version="0.2.0a",
+    version="0.2.1a",
     author="Leonardo dos Santos",
     author_email="Leonardo.dosSantos@unige.ch",
     packages=["flatstar"],
