@@ -52,6 +52,7 @@ class StarGrid(object):
         self.planet_radius_px = None  # Planet radius in pixel space
         self.planet_impact_parameter = None
         self.planet_phase = None
+        self.transit_depth = None  # Transit depth at the specific configuration
 
 
 # The following function is used to calculate distances from a reference point

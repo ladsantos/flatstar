@@ -97,9 +97,9 @@ def test_upscaling(grid_size=500, factor=np.random.random() * 10, use_ld=6):
 def test_transit(grid_size=2001, planet_to_star_ratio=0.15,
                  transit_required_precision=1E-3):
     star_grid = draw.star(grid_size)
-    total_intensity_0 = np.sum(star_grid.intensity)
-    transit_grid = draw.planet_transit(star_grid, planet_to_star_ratio)
-    total_intensity_1 = np.sum(transit_grid.intensity)
-    transit_depth = total_intensity_0 - total_intensity_1
+    transit_grid = draw.planet_transit(star_grid, planet_to_star_ratio,
+                                       rescaling_factor=0.5,
+                                       resample_method="box")
+    transit_depth = transit_grid.transit_depth
     obtained_precision = abs(transit_depth - planet_to_star_ratio ** 2)
     assert (obtained_precision < transit_required_precision)

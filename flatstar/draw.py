@@ -195,7 +195,7 @@ def star(grid_size, radius=0.5, limb_darkening_law=None, ld_coefficient=None,
 
 # Draw a transit on a star
 def planet_transit(star_grid, planet_to_star_ratio, impact_parameter=0.0,
-                   phase=0.0):
+                   phase=0.0, rescaling_factor=None, resample_method=None):
     """
     Draw a transit in the ``StarGrid`` object.
 
@@ -214,6 +214,16 @@ def planet_transit(star_grid, planet_to_star_ratio, impact_parameter=0.0,
         time of first contact, transit mid-center, and time of fourth contact.
         Default is 0.
 
+    rescaling_factor (``float`` or ``None``, optional)
+        Resize the grid by a factor defined by this parameter. If ``None``, no
+        resizing is performed. Default is ``None``.
+
+    resample_method (``str`` or ``None``, optional):
+        Resampling algorithm. The options currently available are:
+        ``"nearest"``, ``"box"``, ``"bilinear"``, ``"hamming"``, ``"bicubic"``,
+        and ``"lanczos"``. If ``None``, then fallback to ``"box"``. Default
+        is ``None``.
+
     Returns
     -------
     star_grid (``flatstar.utils.StarGrid`` object):
@@ -221,6 +231,7 @@ def planet_transit(star_grid, planet_to_star_ratio, impact_parameter=0.0,
     """
     b = impact_parameter
     rp_rs = planet_to_star_ratio
+    intensity_0 = np.sum(star_grid.intensity)
 
     # Radii of the star and the planet in units of grid size
     grid_length_x, grid_length_y = np.shape(star_grid.intensity)
@@ -228,25 +239,70 @@ def planet_transit(star_grid, planet_to_star_ratio, impact_parameter=0.0,
     planet_radius = star_radius * rp_rs
 
     # Before drawing the planet, we need to figure out the exact coordinate
-    # of the center of the planet
-    y_p = (impact_parameter * star_radius) + grid_length_y / 2
+    # of the center of the planet. We have an embedded function to do that
+    # because we may need to do it more than once
+    def _calculate_planet_center(len_x, len_y, r_s, r_p):
+        # The y location is easy
+        y = (impact_parameter * r_s) + len_y / 2
 
-    # The x coordinate of the planet is a bit trickier to figure out. Since we
-    # want the -0.5 and 0.5 phases to always match the times of first and fourth
-    # contact, respectively, x_p will depend on the impact parameter in a very
-    # non-trivial manner. Sorry for the ugliness, but it is the price of
-    # convenience!
-    beta = (1 - (b * star_radius / (planet_radius + star_radius)) ** 2) ** 0.5
-    alpha = grid_length_x / 2 - (planet_radius + star_radius) * beta
-    x_p = alpha + (phase + 0.5) * 2 * (planet_radius + star_radius) * beta
+        # The x coordinate of the planet is a bit trickier to figure out. Since
+        # we want the -0.5 and 0.5 phases to always match the times of first and
+        # fourth contact, respectively, x_p will depend on the impact parameter
+        # in a very non-trivial manner. Sorry for the ugliness, but it is the
+        # price of convenience!
+        beta = (1 - (b * r_s / (r_p + r_s)) ** 2) ** 0.5
+        alpha = len_x / 2 - (r_p + r_s) * beta
+        x = alpha + (phase + 0.5) * 2 * (r_p + r_s) * beta
+
+        return x, y
 
     # And now we draw it
+    x_p, y_p = _calculate_planet_center(grid_length_x, grid_length_y,
+                                        star_radius, planet_radius)
     planet = _disk(center=(x_p, y_p), radius=planet_radius,
                    shape=np.shape(star_grid.intensity),
                    value=1.0)
     updated_intensity = star_grid.intensity - planet
-    # Remove infinities in the planet disk and set the intensity to zero
+    # Remove negatives in the planet disk and set the intensity to zero
     updated_intensity[updated_intensity < 0] = 0.0
+
+    # Calculate intensity with the planet transit included
+    intensity_1 = np.sum(updated_intensity)
+
+    # Alright, if rescaling was requested, many things have to change, so brace
+    # yourself for some hacking
+    if rescaling_factor is not None:
+        new_shape = (int(round(grid_length_x * rescaling_factor)),
+                     int(round(grid_length_y * rescaling_factor)))
+        norm = rescaling_factor ** 2
+        im = Image.fromarray(updated_intensity)
+        if resample_method is None:
+            updated_intensity = np.array(
+                im.resize(new_shape, resample=Image.BOX)
+            )
+        elif resample_method is not None:
+            try:
+                updated_intensity = np.array(
+                    im.resize(new_shape,
+                              resample=RESAMPLING_ALIAS[resample_method])
+                )
+            except KeyError:
+                raise NotImplementedError('This resampling method is not '
+                                          'implemented.')
+        # We need to update the normalization and grid lengths
+        updated_intensity /= norm
+        grid_length_x, grid_length_y = np.shape(updated_intensity)
+
+        # And the stellar radius and planet radius to the correct pixel size,
+        # as well as the location of the center of the planet
+        star_grid.radius_px *= rescaling_factor
+        star_radius = star_grid.radius_px
+        planet_radius = star_radius * rp_rs
+        x_p, y_p = _calculate_planet_center(grid_length_x, grid_length_y,
+                                            star_radius, planet_radius)
+
+    else:  # No rescaling requested
+        pass
 
     # Update the ``StarGrid`` object
     star_grid.intensity = updated_intensity
@@ -255,6 +311,7 @@ def planet_transit(star_grid, planet_to_star_ratio, impact_parameter=0.0,
     star_grid.planet_radius_px = planet_radius
     star_grid.planet_impact_parameter = b
     star_grid.phase = phase
+    star_grid.transit_depth = intensity_0 - intensity_1
     return star_grid
 
 
